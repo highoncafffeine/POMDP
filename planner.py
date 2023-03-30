@@ -128,6 +128,8 @@ if __name__ == "__main__":
             policy[0] = policy[0] + opt_policy['0'+policy[0]]
         while(policy[1][-1] != 'S'):
             policy[1] = policy[1] + opt_policy['1'+policy[1]]
-        print(policy[0], policy[1], "\n", opt_val['0'], opt_val['1'])
+        for s in states:
+            print(s, opt_policy[s], opt_val[s])
+        # print(policy[0], policy[1], "\n", opt_val['0'], opt_val['1'])
         # for k in p2.keys():
         #     print(k, p2[k])
