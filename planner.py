@@ -8,7 +8,7 @@ from generate_mdp import generate_states
 def valueEvaluation(policy, states, actions, transition, gamma, window_len):
     v0 = {state: 0 for state in states}
     v1 = {state: 0 for state in states}
-    max_error = 1e-6
+    max_error = 1e-10
     count = 0
 
     a0 = 0
