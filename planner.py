@@ -8,13 +8,13 @@ from generate_mdp import generate_states
 def valueEvaluation(policy, states, actions, transition, gamma, window_len):
     v0 = {state: 0 for state in states}
     v1 = {state: 0 for state in states}
-    max_error = 1e-12
+    max_error = 1e-6
     count = 0
 
     a0 = 0
     while(1):
         a0+=1
-        error = 0
+        error = -1
         for state in states:
             v1[state] = 0
             for nextState in transition[state][policy[state]].keys():
@@ -22,6 +22,10 @@ def valueEvaluation(policy, states, actions, transition, gamma, window_len):
                 cost = transition[state][policy[state]][nextState]['cost']
                 v1[state] += (prob*(cost + (gamma*v0[nextState])))
             error = max(error, np.abs(v1[state]-v0[state]))
+        #print 
+        vp0 = {k:round(v, 3) for k,v in v0.items()}
+        vp1 = {k:round(v, 3) for k,v in v1.items()}
+        print(vp0,"\n", vp1,"\n")
         if error < max_error:
             break
 
@@ -41,11 +45,9 @@ def brute_force_search(states, actions, transition, gamma, window_len):
         improvable = False
         for s in states:
             for a in actions:
-                if a == improved_policy[s]:
+                if a == improved_policy[s] or a not in transition[s].keys():
                     continue
                 t_policy = policy.copy()
-                if(len(s)<window_len+1 or (a[-1] == 'S')):
-                    t_policy[s] = a
                 if(V[s] - Q_pi(V, s, a, transition, gamma) > 1e-7):
                     improved_policy[s] = a
                     improvable = True
@@ -54,6 +56,8 @@ def brute_force_search(states, actions, transition, gamma, window_len):
             break
         else:
             policy = improved_policy.copy()
+        print(policy)
+    print("out of while")
     value_function = valueEvaluation(policy, states, actions, transition, gamma, window_len)
     policy = policy
     return policy, value_function
@@ -87,13 +91,13 @@ if __name__ == "__main__":
     for i in range(1,len(file[2])):
         mdp['end'].append(int(file[2][i]))
 
-    mdp['transition'] = {state: {action: {} for action in actions} for state in states} #[[[] for i in range(mdp['numActions'])] for j in range(mdp['numStates'])]
+    mdp['transition'] = {state: {} for state in states} #[[[] for i in range(mdp['numActions'])] for j in range(mdp['numStates'])]
     for i in range(3,len(file)-2):
         state = file[i][1]
         action = file[i][2]
         nextState = file[i][3]
-        # if nextState not in mdp['transition'][state][action].keys():
-        #     mdp['transition'][state][action][nextState] = {}
+        if action not in mdp['transition'][state].keys():
+             mdp['transition'][state][action] = {}
         mdp['transition'][state][action][nextState] = {'cost': float(file[i][4]), 'prob':float(file[i][5])}
 
     mdp['discount'] = float(file[-1][1])
@@ -103,6 +107,7 @@ if __name__ == "__main__":
     numActions = mdp['numActions']
     transition = mdp['transition']
     gamma      = mdp['discount']
+    print(transition)
     end_states = mdp['end']
 
 
@@ -118,6 +123,11 @@ if __name__ == "__main__":
 
     if(optimal):
         opt_policy, opt_val = brute_force_search(states, actions, transition, gamma, window_len)
-        print(opt_policy['0'], opt_policy['1'], "\n", opt_val['0'], opt_val['1'])
+        policy = {0:opt_policy['0'], 1:opt_policy['1']}
+        while(policy[0][-1] != 'S'):
+            policy[0] = policy[0] + opt_policy['0'+policy[0]]
+        while(policy[1][-1] != 'S'):
+            policy[1] = policy[1] + opt_policy['1'+policy[1]]
+        print(policy[0], policy[1], "\n", opt_val['0'], opt_val['1'])
         # for k in p2.keys():
         #     print(k, p2[k])
