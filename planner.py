@@ -14,21 +14,23 @@ def valueEvaluation(policy, states, actions, transition, gamma, window_len):
     a0 = 0
     while(1):
         a0+=1
+        error = 0
         for state in states:
             v1[state] = 0
             for nextState in transition[state][policy[state]].keys():
                 prob = transition[state][policy[state]][nextState]['prob']
                 cost = transition[state][policy[state]][nextState]['cost']
                 v1[state] += (prob*(cost + (gamma*v0[nextState])))
-        if np.max(np.abs(np.subtract(v0,v1))) < max_error:
+            error = max(error, np.abs(v1[state]-v0[state]))
+        if error < max_error:
             break
 
-        v0 = np.copy(v1)
+        v0 = v1.copy()
         count += 1
 
     return v1
 
-def Q_pi(V, s, a, transition, gamma, window_len):
+def Q_pi(V, s, a, transition, gamma):
     return sum([transition[s][a][s_]['prob']*(transition[s][a][s_]['cost']+gamma*V[s_]) for s_ in transition[s][a].keys()])
 
 def brute_force_search(states, actions, transition, gamma, window_len):
@@ -44,7 +46,7 @@ def brute_force_search(states, actions, transition, gamma, window_len):
                 t_policy = policy.copy()
                 if(len(s)<window_len+1 or (a[-1] == 'S')):
                     t_policy[s] = a
-                if(V[s] - Q_pi(V, s, a) > 1e-7):
+                if(V[s] - Q_pi(V, s, a, transition, gamma) > 1e-7):
                     improved_policy[s] = a
                     improvable = True
                     break
@@ -54,7 +56,7 @@ def brute_force_search(states, actions, transition, gamma, window_len):
             policy = improved_policy.copy()
     value_function = valueEvaluation(policy, states, actions, transition, gamma, window_len)
     policy = policy
-    return policy, val
+    return policy, value_function
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -90,9 +92,9 @@ if __name__ == "__main__":
         state = file[i][1]
         action = file[i][2]
         nextState = file[i][3]
-        if nextState not in mdp['transition'][state][action].keys():
-            mdp['transition'][state][action][nextState] = []
-        mdp['transition'][state][action][nextState].append(float(file[i][4]), float(file[i][5]))
+        # if nextState not in mdp['transition'][state][action].keys():
+        #     mdp['transition'][state][action][nextState] = {}
+        mdp['transition'][state][action][nextState] = {'cost': float(file[i][4]), 'prob':float(file[i][5])}
 
     mdp['discount'] = float(file[-1][1])
 
@@ -115,7 +117,7 @@ if __name__ == "__main__":
         print(V0)
 
     if(optimal):
-        opt_policy, opt_val = brute_force_search(states, actions, transition, gamma, end_states)
-        print(opt_policy[0], opt_policy[1], "\n", opt_val[0], opt_val[1])
+        opt_policy, opt_val = brute_force_search(states, actions, transition, gamma, window_len)
+        print(opt_policy['0'], opt_policy['1'], "\n", opt_val['0'], opt_val['1'])
         # for k in p2.keys():
         #     print(k, p2[k])
