@@ -92,13 +92,14 @@ if __name__ == "__main__":
         mdp['end'].append(int(file[2][i]))
 
     mdp['transition'] = {state: {} for state in states} #[[[] for i in range(mdp['numActions'])] for j in range(mdp['numStates'])]
-    for i in range(3,len(file)-2):
-        state = file[i][1]
-        action = file[i][2]
-        nextState = file[i][3]
-        if action not in mdp['transition'][state].keys():
-             mdp['transition'][state][action] = {}
-        mdp['transition'][state][action][nextState] = {'cost': float(file[i][4]), 'prob':float(file[i][5])}
+    for line in file:
+        if(line[0] == 'transition'):
+            state = line[1]
+            action = line[2]
+            nextState = line[3]
+            if action not in mdp['transition'][state].keys():
+                mdp['transition'][state][action] = {}
+            mdp['transition'][state][action][nextState] = {'cost': float(line[4]), 'prob':float(line[5])}
 
     mdp['discount'] = float(file[-1][1])
 
