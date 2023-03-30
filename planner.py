@@ -25,7 +25,7 @@ def valueEvaluation(policy, states, actions, transition, gamma, window_len):
         #print 
         vp0 = {k:round(v, 3) for k,v in v0.items()}
         vp1 = {k:round(v, 3) for k,v in v1.items()}
-        print(vp0,"\n", vp1,"\n")
+        # print(vp0,"\n", vp1,"\n")
         if error < max_error:
             break
 
@@ -56,8 +56,8 @@ def brute_force_search(states, actions, transition, gamma, window_len):
             break
         else:
             policy = improved_policy.copy()
-        print(policy)
-    print("out of while")
+        # print(policy)
+    # print("out of while")
     value_function = valueEvaluation(policy, states, actions, transition, gamma, window_len)
     policy = policy
     return policy, value_function
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     numActions = mdp['numActions']
     transition = mdp['transition']
     gamma      = mdp['discount']
-    print(transition)
+    # print(transition)
     end_states = mdp['end']
 
 
