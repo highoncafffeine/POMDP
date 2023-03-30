@@ -2,7 +2,7 @@ import random,argparse,sys,subprocess,os
 from generate_mdp import generate_states
 import matplotlib.pyplot as plt
 import numpy as np
-W = 6
+
 for W in range(0, 7):
     cmd_encoder = "python", "generate_mdp.py", "--K", str(0.01), "--window_len", str(W), "--seed", str(704)
     f = open('mdp_file','w')
