@@ -2,65 +2,72 @@ import numpy as np
 import pulp
 import math
 import argparse
+from generate_mdp import generate_states
 
 
-def valueEvaluation(policy, numStates, numActions, transition, gamma, end_states):
-    v0 = np.zeros(numStates)
-    v1 = np.zeros(numStates)
+def valueEvaluation(policy, states, actions, transition, gamma, window_len):
+    v0 = {state: 0 for state in states}
+    v1 = {state: 0 for state in states}
     max_error = 1e-12
     count = 0
 
     a0 = 0
     while(1):
         a0+=1
-        for i in range(numStates):
-            if i in end_states:
-                continue
-            v1[i] = 0
-            for k in transition[i][policy[i]]:
-                t = len(policy[i])
-                discount = gamma**(t)
-                v1[i] += (k[2]*(k[1] + (discount*v0[k[0]])))
+        for state in states:
+            v1[state] = 0
+            for nextState in transition[state][policy[state]].keys():
+                prob = transition[state][policy[state]][nextState]['prob']
+                cost = transition[state][policy[state]][nextState]['cost']
+                v1[state] += (prob*(cost + (gamma*v0[nextState])))
         if np.max(np.abs(np.subtract(v0,v1))) < max_error:
             break
 
         v0 = np.copy(v1)
         count += 1
 
-    return v1    
+    return v1
 
-def brute_force_search(numStates, numActions, transition, gamma, end_states):
-    value_functions = {}
-    opt_policy = ['R', 'R']
-    opt_val = [math.inf, math.inf]
-    for a1 in actions:
-        for a2 in actions:
-            given_policy = [a1, a2]
-            V0 = valueEvaluation(given_policy, numStates, numActions, transition, gamma, end_states)
-            if V0[0]<opt_val[0] and V0[1]<opt_val[1]:
-                opt_val = V0
-                opt_policy = given_policy
-            # print(given_policy, V0)
-            value_functions[tuple(given_policy)] = V0
+def Q_pi(V, s, a, transition, gamma, window_len):
+    return sum([transition[s][a][s_]['prob']*(transition[s][a][s_]['cost']+gamma*V[s_]) for s_ in transition[s][a].keys()])
 
-    # p1 = {k: v for k, v in sorted(value_functions.items(), key=lambda item: item[1][1])}
-    # sort policies by value of state 0
-    p2 = {k: v for k, v in sorted(value_functions.items(), key=lambda item: item[1][0])}
-
-    return p2, opt_policy, opt_val
+def brute_force_search(states, actions, transition, gamma, window_len):
+    policy = {state: 'RS' for state in states}
+    while(True):
+        V = valueEvaluation(policy, states, actions, transition, gamma, window_len)
+        improved_policy = policy.copy()
+        improvable = False
+        for s in states:
+            for a in actions:
+                if a == improved_policy[s]:
+                    continue
+                t_policy = policy.copy()
+                if(len(s)<window_len+1 or (a[-1] == 'S')):
+                    t_policy[s] = a
+                if(V[s] - Q_pi(V, s, a) > 1e-7):
+                    improved_policy[s] = a
+                    improvable = True
+                    break
+        if not improvable:
+            break
+        else:
+            policy = improved_policy.copy()
+    value_function = valueEvaluation(policy, states, actions, transition, gamma, window_len)
+    policy = policy
+    return policy, val
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mdp")
     parser.add_argument("--policy",default= "")
     parser.add_argument("--optimal", action=argparse.BooleanOptionalAction)
-    parser.add_argument("--len_action", default = -1)
+    parser.add_argument("--window_len", default = -1)
     args = parser.parse_args()
 
     file = args.mdp
     pol_file = args.policy
     optimal = args.optimal
-    len_action  = int(args.len_action)
+    window_len  = int(args.window_len)
 
     with open(file) as f:
         content = f.readlines()
@@ -70,18 +77,22 @@ if __name__ == "__main__":
     mdp ={}
     mdp['numStates'] = int(file[0][1])
     mdp['numActions'] = int(file[1][1])
+    actions = ['R', 'B', 'RS', 'BS']
+    states0, states1 = generate_states(WINDOW_LEN = window_len)
+    states = states0 + states1
 
     mdp['end'] = []
     for i in range(1,len(file[2])):
         mdp['end'].append(int(file[2][i]))
 
-    mdp['transition'] = {0:{}, 1:{}} #[[[] for i in range(mdp['numActions'])] for j in range(mdp['numStates'])]
+    mdp['transition'] = {state: {action: {} for action in actions} for state in states} #[[[] for i in range(mdp['numActions'])] for j in range(mdp['numStates'])]
     for i in range(3,len(file)-2):
-        m = int(file[i][1])
-        n = file[i][2]
-        if n not in mdp['transition'][m].keys():
-            mdp['transition'][m][n] = []
-        mdp['transition'][m][n].append((int(file[i][3]), float(file[i][4]), float(file[i][5])))
+        state = file[i][1]
+        action = file[i][2]
+        nextState = file[i][3]
+        if nextState not in mdp['transition'][state][action].keys():
+            mdp['transition'][state][action][nextState] = []
+        mdp['transition'][state][action][nextState].append(float(file[i][4]), float(file[i][5]))
 
     mdp['discount'] = float(file[-1][1])
 
@@ -92,9 +103,6 @@ if __name__ == "__main__":
     gamma      = mdp['discount']
     end_states = mdp['end']
 
-    actions = list(mdp['transition'][0].keys())
-    if len_action>0:
-        actions = [x for x in actions if len(x)<=len_action]
 
     if pol_file != "":
         given_policy = []
@@ -107,7 +115,7 @@ if __name__ == "__main__":
         print(V0)
 
     if(optimal):
-        p2, opt_policy, opt_val = brute_force_search(numStates, numActions, transition, gamma, end_states)
+        opt_policy, opt_val = brute_force_search(states, actions, transition, gamma, end_states)
         print(opt_policy[0], opt_policy[1], "\n", opt_val[0], opt_val[1])
         # for k in p2.keys():
         #     print(k, p2[k])
