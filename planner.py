@@ -113,14 +113,19 @@ if __name__ == "__main__":
 
 
     if pol_file != "":
-        given_policy = []
+        given_policy = {}
         with open(pol_file) as p:
             pol_content = p.readlines()
-        pol_file = [pol_content[i].split() for i in range(len(pol_content))]   
-        for i in range(len(pol_file)):
-            given_policy.append(pol_file[i][0])
-        V0 = valueEvaluation(given_policy, numStates, numActions, transition, gamma, end_states)
-        print(V0)
+        pol_file = [pol_content[i].strip() for i in range(len(pol_content))]   
+        for line in pol_content:
+            if line == "":
+                continue
+            state = line.split(" ")[0]
+            action = line.split(" ")[1].replace("\n", "")
+            given_policy[state] = action
+        
+        V0 = valueEvaluation(given_policy, states, actions, transition, gamma, window_len)
+        print(V0['0'], V0['1'])
 
     if(optimal):
         opt_policy, opt_val = brute_force_search(states, actions, transition, gamma, window_len)
@@ -129,8 +134,9 @@ if __name__ == "__main__":
             policy[0] = policy[0] + opt_policy['0'+policy[0]]
         while(policy[1][-1] != 'S'):
             policy[1] = policy[1] + opt_policy['1'+policy[1]]
-        for s in states:
-            print(s, opt_policy[s], opt_val[s])
-        # print(policy[0], policy[1], "\n", opt_val['0'], opt_val['1'])
+        # for s in states:
+        #     print(s, opt_policy[s], opt_val[s])
+        print(0, policy[0], opt_val['0'])
+        print(1, policy[1], opt_val['1'])
         # for k in p2.keys():
         #     print(k, p2[k])
