@@ -50,18 +50,24 @@ if __name__ == "__main__":
     numStates = 2**(WINDOW_LEN + 2) - 2       
     numActions = 4
     gamma = 0.5
-    p0 = np.random.rand()
-    p1 = np.random.rand()
-    p2 = np.random.rand()
-    p3 = np.random.rand()
+    # p0 = np.random.rand()
+    # p1 = np.random.rand()
+    # p2 = np.random.rand()
+    # p3 = np.random.rand()
+    p0 = 0.7 
+    p1 = 0.2 
+    p2 = 0.3
+    p3 = 0.9
     Tr= np.array([[p0, 1-p0],
                 [p1, 1-p1]])
 
     Tb = np.array([[p2, 1-p2],
                 [p3, 1-p3]])
 
-    Cr = np.random.rand(2) #np.array([0,1])
-    Cb = np.random.rand(2) #np.array([1,0])
+    # Cr = np.random.rand(2) #np.array([0,1])
+    # Cb = np.random.rand(2) #np.array([1,0])
+    Cr = np.array([0,1])
+    Cb = np.array([1,0])   
     Crs = Cr+gamma*K
     Cbs = Cb+gamma*K
 
