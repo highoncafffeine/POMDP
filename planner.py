@@ -68,6 +68,7 @@ if __name__ == "__main__":
     parser.add_argument("--policy",default= "")
     parser.add_argument("--optimal", action=argparse.BooleanOptionalAction)
     parser.add_argument("--window_len", default = -1)
+    parser.add_argument("--print_all", action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
     file = args.mdp
@@ -97,9 +98,10 @@ if __name__ == "__main__":
             state = line[1]
             action = line[2]
             nextState = line[3]
-            if action not in mdp['transition'][state].keys():
-                mdp['transition'][state][action] = {}
-            mdp['transition'][state][action][nextState] = {'cost': float(line[4]), 'prob':float(line[5])}
+            if state in states and nextState in state:
+                if action not in mdp['transition'][state].keys():
+                    mdp['transition'][state][action] = {}
+                mdp['transition'][state][action][nextState] = {'cost': float(line[4]), 'prob':float(line[5])}
 
     mdp['discount'] = float(file[-1][1])
 
@@ -134,9 +136,9 @@ if __name__ == "__main__":
             policy[0] = policy[0] + opt_policy['0'+policy[0]]
         while(policy[1][-1] != 'S'):
             policy[1] = policy[1] + opt_policy['1'+policy[1]]
-        # for s in states:
-        #     print(s, opt_policy[s], opt_val[s])
-        print(0, policy[0], opt_val['0'])
-        print(1, policy[1], opt_val['1'])
-        # for k in p2.keys():
-        #     print(k, p2[k])
+        if args.print_all:
+            for s in states:
+                print(s, opt_policy[s], opt_val[s])
+        else:
+            print(f"state 0, policy: {policy[0]}, value: {opt_val['0']}")
+            print(f"state 1, policy: {policy[1]}, value: {opt_val['1']}")

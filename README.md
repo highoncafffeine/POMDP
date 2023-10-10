@@ -1,4 +1,4 @@
-# Optimal policy for partially Observable MDP state sensing cost k with r blind action  
+# State sensing for blind MDP agents
 A Partially Observable MDP is a generalization of the MDP setting where the system dynamics are determined
 by an MDP, but the agent cannot directly observe the underlying state. In this setting, the agent is aware of
 its initial state but is unaware of their exact state after taking any action, except when it pays a fixed cost
@@ -63,3 +63,49 @@ Cb: [1.5, 0.5]
 Tr: [[0.7, 0.3], [0.2, 0.8]]
 Tb: [[0.3, 0.7], [0.9, 0.1]]
 ```
+
+---
+
+# MDP Planner README
+
+---
+
+## Introduction:
+
+`planner.py` is a script designed to compute and evaluate policies for a specified Markov Decision Process (MDP).
+
+## Usage:
+
+To use the planner, run:
+
+```
+python planner.py --mdp <path_to_mdp_file> [options]
+```
+
+## Command-line Arguments:
+
+- `--mdp`: Specifies the path to the MDP file. This argument is **required**.
+
+- `--policy`: Path to an existing policy file that will be evaluated. (Optional)
+
+- `--optimal`: Use this flag if you want to compute the optimal policy. (Optional)
+
+- `--window_len`: Specifies the window length for the MDP. Default is `-1`. (Optional)
+
+- `--print_all`: Use this flag to print the policy for all states, not just the primary ones. (Optional)
+
+## Example:
+
+To compute and print the optimal policy for a specific MDP:
+
+```
+python planner.py --mdp /path/to/mdp.txt --optimal
+```
+
+To evaluate an existing policy:
+
+```
+python planner.py --mdp /path/to/mdp.txt --policy /path/to/policy.txt
+```
+
+---
