@@ -22,10 +22,8 @@ def valueEvaluation(policy, states, actions, transition, gamma, window_len):
                 cost = transition[state][policy[state]][nextState]['cost']
                 v1[state] += (prob*(cost + (gamma*v0[nextState])))
             error = max(error, np.abs(v1[state]-v0[state]))
-        #print 
         vp0 = {k:round(v, 3) for k,v in v0.items()}
         vp1 = {k:round(v, 3) for k,v in v1.items()}
-        # print(vp0,"\n", vp1,"\n")
         if error < max_error:
             break
 
@@ -38,7 +36,7 @@ def Q_pi(V, s, a, transition, gamma):
     return sum([transition[s][a][s_]['prob']*(transition[s][a][s_]['cost']+gamma*V[s_]) for s_ in transition[s][a].keys()])
 
 def brute_force_search(states, actions, transition, gamma, window_len):
-    policy = {state: 'RS' for state in states}
+    policy = {state: list(transition[state].keys())[0] for state in states}
     while(True):
         V = valueEvaluation(policy, states, actions, transition, gamma, window_len)
         improved_policy = policy.copy()
@@ -80,14 +78,12 @@ if __name__ == "__main__":
         content = f.readlines()
     file = [content[i][:-1].split() for i in range(len(content))]   
 
-
     mdp ={}
     mdp['numStates'] = int(file[0][1])
     mdp['numActions'] = int(file[1][1])
     actions = ['R', 'B', 'RS', 'BS']
     states0, states1 = generate_states(WINDOW_LEN = window_len)
     states = states0 + states1
-
     mdp['end'] = []
     for i in range(1,len(file[2])):
         mdp['end'].append(int(file[2][i]))
@@ -98,11 +94,11 @@ if __name__ == "__main__":
             state = line[1]
             action = line[2]
             nextState = line[3]
-            if state in states and nextState in state:
+            if state in states and nextState in states:
                 if action not in mdp['transition'][state].keys():
                     mdp['transition'][state][action] = {}
                 mdp['transition'][state][action][nextState] = {'cost': float(line[4]), 'prob':float(line[5])}
-
+    print(mdp['transition'])
     mdp['discount'] = float(file[-1][1])
 
 
@@ -115,7 +111,7 @@ if __name__ == "__main__":
 
 
     if pol_file != "":
-        given_policy = {}
+        given_policy = {state:"RS" for state in states}
         with open(pol_file) as p:
             pol_content = p.readlines()
         pol_file = [pol_content[i].strip() for i in range(len(pol_content))]   
@@ -124,8 +120,13 @@ if __name__ == "__main__":
                 continue
             state = line.split(" ")[0]
             action = line.split(" ")[1].replace("\n", "")
-            given_policy[state] = action
-        
+            action = state + action
+            for i in range(len(action)):
+                if not action[i+1] == 'S':
+                    given_policy[action[:i+1]] = action[i+1]
+                else:
+                    given_policy[action[:i+1]] = action[i:]
+                    break
         V0 = valueEvaluation(given_policy, states, actions, transition, gamma, window_len)
         print(V0['0'], V0['1'])
 
@@ -138,7 +139,7 @@ if __name__ == "__main__":
             policy[1] = policy[1] + opt_policy['1'+policy[1]]
         if args.print_all:
             for s in states:
-                print(s, opt_policy[s], opt_val[s])
+                print(f"state {s}, policy: {opt_policy[s]}, value: {opt_val[s]}")
         else:
             print(f"state 0, policy: {policy[0]}, value: {opt_val['0']}")
             print(f"state 1, policy: {policy[1]}, value: {opt_val['1']}")
